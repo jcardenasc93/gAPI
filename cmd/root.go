@@ -10,7 +10,7 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "gapi [URL]",
+	Use:   "gapi [method] URL",
 	Short: "gAPI is a CLI http client for developers",
 	Long: `gAPI is a CLI http client for developers that allows to
     make http requests in an easy, interactive and straightforward way. Also allows
@@ -20,14 +20,25 @@ var rootCmd = &cobra.Command{
 }
 
 func runRequest(cmd *cobra.Command, args []string) {
-	url := args[0]
-	resp, err := handlers.MakeRequest(url, "application/json", "GET")
+	var (
+		method string
+		url    string
+	)
+
+	if len(args) == 1 {
+		method = handlers.DefaultVerb
+		url = args[0]
+	} else {
+		method = args[0]
+		url = args[1]
+	}
+	handler, err := handlers.MakeRequest(url, "application/json", method)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	pprinter := ui.NewPPrinter(resp)
-	pprinter.PrintResp()
+	pprinter := ui.NewPPrinter(handler)
+	pprinter.Print()
 }
 
 func Execute() {

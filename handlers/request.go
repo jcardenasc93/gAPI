@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 )
@@ -14,7 +13,7 @@ const (
 	HTTPPut    string = http.MethodPut
 	HTTPDelete string = http.MethodDelete
 )
-const defaultVerb = HTTPGet
+const DefaultVerb = HTTPGet
 
 var strings map[string]string = map[string]string{
 	"GET":    HTTPGet,
@@ -29,8 +28,9 @@ var strings map[string]string = map[string]string{
 
 type RequestHandler struct {
 	url         string
-	ioReader    io.Reader
 	contentType string
+	Req         *http.Request
+	Resp        *http.Response
 }
 
 func new(url string, contentType string) *RequestHandler {
@@ -41,7 +41,7 @@ func new(url string, contentType string) *RequestHandler {
 }
 
 func newReq(method string, h *RequestHandler) (r *http.Request) {
-	r, err := http.NewRequest(method, h.url, h.ioReader)
+	r, err := http.NewRequest(method, h.url, nil)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -49,20 +49,23 @@ func newReq(method string, h *RequestHandler) (r *http.Request) {
 	return
 }
 
-func MakeRequest(url, contentType, method string) (resp *http.Response, err error) {
-	handler := new(url, contentType)
+func MakeRequest(url, contentType, method string) (handler *RequestHandler, err error) {
+	handler = new(url, contentType)
 	client := &http.Client{}
 	m, ok := strings[method]
 	if ok != true {
-		return resp, errors.New("Invalid HTTP verb")
+		return nil, errors.New("Invalid HTTP verb")
 	}
-	req := newReq(m, handler)
-	req.Header.Set("Content-type", handler.contentType)
-	resp, err = client.Do(req)
+	handler.Req = newReq(m, handler)
+	handler.Req.Header.Set("Content-type", handler.contentType)
+	handler.Req.Header.Set("X-example", "hello from gAPI")
+	handler.Req.Header.Add("X-example", "other")
+	handler.Resp, err = client.Do(handler.Req)
 
 	if err != nil {
 		fmt.Printf("Something get wrong. %s\n", err.Error())
-		return resp, err
+		return nil, err
 	}
+
 	return
 }
