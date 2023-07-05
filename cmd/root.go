@@ -3,10 +3,15 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/jcardenasc93/gapi/internal/handler"
 	"github.com/jcardenasc93/gapi/internal/ui"
 	"github.com/spf13/cobra"
+)
+
+var (
+	headersFlag string
 )
 
 var rootCmd = &cobra.Command{
@@ -32,7 +37,7 @@ func runRequest(cmd *cobra.Command, args []string) {
 		method = args[0]
 		url = args[1]
 	}
-	hs := []string{"Content-Type:html", "X-custom:example"}
+	hs := strings.Split(headersFlag, "|")
 	h, err := handler.MakeReq(url, method, hs)
 	if err != nil {
 		fmt.Printf("Error: %s", err.Error())
@@ -47,4 +52,11 @@ func Execute() {
 		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func init() {
+	rootCmd.PersistentFlags().StringVarP(&headersFlag, "headers", "H", "", `
+        Add pipe separated headers as key:value.
+        Example: Content-Type:application/json|Accept-Language:en-US,en
+        `)
 }
