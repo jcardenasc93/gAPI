@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jcardenasc93/gapi/handlers"
-	"github.com/jcardenasc93/gapi/ui"
+	"github.com/jcardenasc93/gapi/internal/handler"
+	"github.com/jcardenasc93/gapi/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -26,19 +26,20 @@ func runRequest(cmd *cobra.Command, args []string) {
 	)
 
 	if len(args) == 1 {
-		method = handlers.DefaultVerb
+		method = handler.DefaultVerb
 		url = args[0]
 	} else {
 		method = args[0]
 		url = args[1]
 	}
-	handler, err := handlers.MakeRequest(url, "application/json", method)
+	hs := []string{"Content-Type:html", "X-custom:example"}
+	h, err := handler.MakeReq(url, method, hs)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("Error: %s", err.Error())
 		os.Exit(1)
 	}
-	pprinter := ui.NewPPrinter(handler)
-	pprinter.Print()
+	pp := ui.NewPPrinter(h.Req, h.Resp)
+	pp.Print()
 }
 
 func Execute() {
